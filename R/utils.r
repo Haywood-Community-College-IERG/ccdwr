@@ -71,3 +71,41 @@ age <- function(from, to) {
 #' @export
 #'
 `%nlike any%` <- function(x, pattern) !(`%like any%`(x,pattern))
+
+#' Add randome IDs to data frame
+#'
+#' @param df Data frame with which to add new random ID
+#' @param ID The existing ID field.
+#' @param drop Whether to drop the original ID field. If
+#'     ID field is NOT dropped, it will be renamed OID.
+#'     (default=TRUE)
+#' @importFrom rlang := .data
+#' @importFrom magrittr `%>%`
+#' @importFrom dplyr select rename mutate distinct arrange left_join
+#' @export
+add_random_ids <- function(df, ID, drop=TRUE) {
+    # Make the build happy
+    OID <- NULL
+
+    IDs <- df %>% dplyr::select( {{ ID }} ) %>% dplyr::distinct()
+
+    ID_name <- names( IDs )
+
+    id_count <- length(IDs[[1]])
+    IDs$random_numbers <- stats::runif(n=id_count, min=1, max = 50000)
+
+    IDs %<>% dplyr::arrange( .data$random_numbers )
+    IDs$NID <- seq( from=1, to=id_count, by=1 )
+    IDs$random_numbers <- NULL
+
+    df %<>% dplyr::left_join( IDs, by = ID_name ) %>%
+        dplyr::rename( OID := {{ ID }} ) %>%
+        dplyr::mutate( {{ ID }} := .data$NID ) %>%
+        dplyr::select( -.data$NID )
+
+    if (drop) {
+        df %<>% dplyr::select( -.data$OID )
+    }
+
+    df
+}
