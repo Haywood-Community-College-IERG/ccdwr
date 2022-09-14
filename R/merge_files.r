@@ -18,6 +18,7 @@
 #' @keywords file
 #' @export
 #' @importFrom dplyr bind_rows
+#' @importFrom readr read_csv read_fwf read_lines cols col_character
 #' @importFrom magrittr `%>%`
 #'
 merge_files <- function( path=getwd(), pattern="*", type="csv", FNvar="", FUN=NA,

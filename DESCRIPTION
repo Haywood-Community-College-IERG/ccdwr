@@ -1,7 +1,7 @@
 Package: ccdwr
 Title: Collection of R functions for use with Colleague data and/or the 
     Community College Data Warehouse system (CCDW)
-Version: 1.0.2022-09-08.1
+Version: 1.0.3
 Authors@R: person("David", "Onder", email = "donder@haywood.edu", role = c("aut", "cre"))
 Description: Collection of R functions for use with Colleague data and/or the 
     Community College Data Warehouse system (CCDW). These functions make it 
@@ -20,7 +20,7 @@ Imports:
     magrittr (>= 2.0.1),
     odbc (>= 1.3.3),
     readr (>= 2.1.1),
-    rlang (>= 0.4.12),
+    rlang (>= 1.0.5),
     stringr (>= 1.4.0),
     yaml (>= 2.2.1)
 Suggests: 
