@@ -165,7 +165,7 @@ getCfg <- function( cfg_full_path=NA_character_,
             }
         }
 
-        print(glue::glue("Loading configuration from [{cfg_full_path}]"))
+        warning(glue::glue("Loading configuration from [{cfg_full_path}]"))
 
         if (fs::file_exists(cfg_full_path)) {
             #print(glue::glue("DEBUG: Current dir = [{getwd()}]"))
@@ -185,13 +185,13 @@ getCfg <- function( cfg_full_path=NA_character_,
                 if ("location" %in% names(cfg_l$config)) {
                     if (cfg_l$config$location != "self") {
                         cfg_full_path <- fs::path(cfg_l$config$location,cfg_fn)
-                        print(glue::glue("Redirecting loading configuration from [{cfg_full_path}]"))
+                        warning(glue::glue("Redirecting loading configuration from [{cfg_full_path}]"))
                     }
                 } else {
                     if ("location" %in% names(cfg_l)) {
                         if (cfg_l$location != "self") {
                             cfg_full_path <- fs::path(cfg_l$location,cfg_fn)
-                            print(glue::glue("Redirecting loading configuration from [{cfg_full_path}]"))
+                            warning(glue::glue("Redirecting loading configuration from [{cfg_full_path}]"))
                         }
                     } # else self assumed
                 } # else self assumed
@@ -208,7 +208,7 @@ getCfg <- function( cfg_full_path=NA_character_,
             rlang::env_poke(pkg.env, "cfg", cfg)
             #assign("cfg", cfg, envir=pkg.env)
         } else {
-            print(glue::glue("Configuration not found [{cfg_full_path}]"))
+            warning(glue::glue("Configuration not found [{cfg_full_path}]"))
         }
     } #else {
         #cfg <- rlang::env_get(pkg.env, "cfg", default=NA)
