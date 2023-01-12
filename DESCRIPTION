@@ -1,7 +1,7 @@
 Package: ccdwr
 Title: Collection of R functions for use with Colleague data and/or the 
     Community College Data Warehouse system (CCDW)
-Version: 1.0.3
+Version: 1.0.4
 Authors@R: person("David", "Onder", email = "donder@haywood.edu", role = c("aut", "cre"))
 Description: Collection of R functions for use with Colleague data and/or the 
     Community College Data Warehouse system (CCDW). These functions make it 
@@ -11,7 +11,7 @@ Depends:
     R (>= 3.3.1)
 License: GPL-3
 Encoding: UTF-8
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 Imports:
     dbplyr (>= 2.1.1),
     dplyr (>= 1.0.7),

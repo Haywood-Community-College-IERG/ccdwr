@@ -45,7 +45,7 @@ getCfg <- function( cfg_full_path=NA_character_,
     cfg <- rlang::env_get(pkg.env, "cfg", default=NA, inherit=TRUE)
     #print(glue::glue("cfg={cfg}"))
 
-    if (is.na(cfg) || is.null(cfg) || reload) {
+    if (all(is.na(cfg)) || is.null(cfg) || reload) {
         # Use a cached version unless reload is specified.
         #
         # If a parameter was passed for cfg_full_path, cfg_fn, or cfg_path,
@@ -314,9 +314,9 @@ getColleagueData <- function( file,
     }
 
     if (is.na(cfg_from_file_path)) {
-        conn_str <- stringr::str_c( glue::glue("Driver={{{cfg$sql$driver}}}"),
-                                    glue::glue("Server={{{cfg$sql$server}}}"),
-                                    glue::glue("Database={{{cfg$sql$db}}}"),
+        conn_str <- stringr::str_c( glue::glue("Driver={<<cfg$sql$driver>>}", .open = "<<", .close = ">>"),
+                                    glue::glue("Server={<<cfg$sql$server>>}", .open = "<<", .close = ">>"),
+                                    glue::glue("Database={<<cfg$sql$db>>}", .open = "<<", .close = ">>"),
                                     "Trusted_Connection=Yes",
                                     "Description=Informer.r:getColleagueData()",
                                     sep=";"
