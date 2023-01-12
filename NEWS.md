@@ -1,3 +1,13 @@
+# ccdwr 1.0.5
+
+## New features
+
+None.
+
+## Changes
+
+More fixes to check on a list variable for NAs to return one TRUE/FALSE
+
 # ccdwr 1.0.4
 
 ## New features

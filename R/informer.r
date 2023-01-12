@@ -237,10 +237,10 @@ setCfg <- function( section, variable, value,
                     cfg_fn=NA_character_, cfg_path=NA_character_,
                     reload=FALSE
                     ) {
-    if (is.na(cfg) || is.null(cfg)) {
+    if (all(is.na(cfg)) || is.null(cfg)) {
         cfg <- rlang::env_get(pkg.env, "cfg", default=NA)
 
-        if (is.na(cfg) || is.null(cfg)) {
+        if (all(is.na(cfg)) || is.null(cfg)) {
             cfg <- getCfg(cfg_full_path=cfg_full_path, cfg_fn=cfg_fn, cfg_path=cfg_path, reload=reload)
         }
     }
@@ -293,10 +293,10 @@ getColleagueData <- function( file,
     # This is to remove the package build error: no visible global function definition for ...
     CurrentFlag <- NULL
 
-    if (is.na(cfg) || is.null(cfg)) {
+    if (all(is.na(cfg)) || is.null(cfg)) {
         cfg <- rlang::env_get(pkg.env, "cfg", default=NA)
 
-        if (is.na(cfg) || is.null(cfg)) {
+        if (all(is.na(cfg)) || is.null(cfg)) {
             cfg <- getCfg(cfg_full_path=cfg_full_path, cfg_fn=cfg_fn, cfg_path=cfg_path, reload=reload)
         }
     }
