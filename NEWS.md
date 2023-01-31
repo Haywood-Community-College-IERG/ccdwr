@@ -1,3 +1,14 @@
+# ccdwr 1.0.6
+
+## New features
+
+Added checks for use of Core Technologies tools.
+
+## Changes
+
+Changed all references of HAYWOODCC to CCDWR.
+Added code to check for use of CCDW source.
+
 # ccdwr 1.0.5
 
 ## New features

@@ -9,7 +9,7 @@ pkg_common_cfgpath_params <- function() {
 }
 pkg_common_cfg_params <- function() {
     c(
-        "@param cfg A YAML configuration file with `sql` section that includes `driver` `server`, `db`, and `schema_history`."
+        "@param cfg A YAML configuration file with `sql` section that includes `driver` `server`, `db`, and `schema_default`."
     )
 }
 pkg_common_reload_params <- function() {
@@ -52,18 +52,18 @@ getCfg <- function( cfg_full_path=NA_character_,
         # then use that, Otherwise, do the first from...
         #
         # 1. Look for the file name and path parts in the current folder.
-        # 2. Check for environment variables HAYWOODCC_CFG_FULL_PATH, HAYWOODCC_CFG_PATH, HAYWOODCC_CFG_FN.
-        # 3. Check for haywoodcc.cfg.full_path, haywoodcc.cfg.path, haywoodcc.cfg.fn options.
+        # 2. Check for environment variables CCDWR_CFG_FULL_PATH, CCDWR_CFG_PATH, CCDWR_CFG_FN.
+        # 3. Check for ccdwr.cfg.full_path, ccdwr.cfg.path, ccdwr.cfg.fn options.
         # 4. Return NA
         # TODO: This needs to be fixed to reflect the above comment
 
-        opt_cfg_full_path <- getOption("haywoodcc.cfg.full_path", default=NA_character_)
-        opt_cfg_fn <- getOption("haywoodcc.cfg.fn", default=NA_character_)
-        opt_cfg_path <- getOption("haywoodcc.cfg.path", default=NA_character_)
+        opt_cfg_full_path <- getOption("ccdwr.cfg.full_path", default=NA_character_)
+        opt_cfg_fn <- getOption("ccdwr.cfg.fn", default=NA_character_)
+        opt_cfg_path <- getOption("ccdwr.cfg.path", default=NA_character_)
 
-        env_cfg_full_path <- Sys.getenv("HAYWOODCC_CFG_FULL_PATH")
-        env_cfg_fn <- Sys.getenv("HAYWOODCC_CFG_FN")
-        env_cfg_path <- Sys.getenv("HAYWOODCC_CFG_PATH")
+        env_cfg_full_path <- Sys.getenv("CCDWR_CFG_FULL_PATH")
+        env_cfg_fn <- Sys.getenv("CCDWR_CFG_FN")
+        env_cfg_path <- Sys.getenv("CCDWR_CFG_PATH")
 
         if (is.na(cfg_full_path) && is.na(cfg_fn) && is.na(cfg_path)) {
 
@@ -75,12 +75,12 @@ getCfg <- function( cfg_full_path=NA_character_,
                 cfg_full_path <- fs::path(dflt_cfg_path,dflt_cfg_fn)
             } else {
 
-                # 2. Check for environment variables HAYWOODCC_CFG_FULL_PATH, HAYWOODCC_CFG_PATH, HAYWOODCC_CFG_FN.
+                # 2. Check for environment variables CCDWR_CFG_FULL_PATH, CCDWR_CFG_PATH, CCDWR_CFG_FN.
                 if (!is.na(env_cfg_full_path) && (env_cfg_full_path != "")) {
                     cfg_full_path = env_cfg_full_path
                 } else if (!is.na(env_cfg_fn) || !is.na(env_cfg_path)) {
                     if (!is.na(env_cfg_fn) && (env_cfg_fn != "")) {
-                        #print(glue::glue("Using environtment HAYWOODCC_CFG_FN [{env_cfg_fn}]"))
+                        #print(glue::glue("Using environment CCDWR_CFG_FN [{env_cfg_fn}]"))
                         cfg_fn <- env_cfg_fn
                     } else {
                         #print(glue::glue("Using dflt_cfg_fn: {dflt_cfg_fn}"))
@@ -88,7 +88,7 @@ getCfg <- function( cfg_full_path=NA_character_,
                     }
 
                     if (!is.na(env_cfg_path) && (env_cfg_path != "")) {
-                        #print(glue::glue("Using environtment HAYWOODCC_CFG_PATH [{env_cfg_path}]"))
+                        #print(glue::glue("Using environment CCDWR_CFG_PATH [{env_cfg_path}]"))
                         cfg_path <- env_cfg_path
                     } else {
                         #print(glue::glue("Using dflt_cfg_path: {dflt_cfg_path}"))
@@ -97,26 +97,26 @@ getCfg <- function( cfg_full_path=NA_character_,
 
                     cfg_full_path <- fs::path(cfg_path,cfg_fn)
 
-                # 3. Check for haywoodcc.cfg.full_path, haywoodcc.cfg.path, haywoodcc.cfg.fn options.
+                # 3. Check for ccdwr.cfg.full_path, ccdwr.cfg.path, ccdwr.cfg.fn options.
                 } else if (!is.na(opt_cfg_full_path) && (opt_cfg_full_path != "")) {
-                    #print(glue::glue("Using option haywoodcc.cfg.full_path [{opt_cfg_full_path}]"))
+                    #print(glue::glue("Using option ccdwr.cfg.full_path [{opt_cfg_full_path}]"))
                     cfg_full_path = opt_cfg_full_path
                 } else if (!is.na(opt_cfg_fn) || !is.na(opt_cfg_path)) {
                     if (!is.na(opt_cfg_fn)) {
-                        #print(glue::glue("Using option haywoodcc.cfg.fn [{opt_cfg_fn}]"))
+                        #print(glue::glue("Using option ccdwr.cfg.fn [{opt_cfg_fn}]"))
                         cfg_fn <- opt_cfg_fn
                     } else if (!is.na(env_cfg_fn) && (env_cfg_fn != "")) {
-                        #print(glue::glue("Using environtment HAYWOODCC_CFG_FN [{env_cfg_fn}]"))
+                        #print(glue::glue("Using environment CCDWR_CFG_FN [{env_cfg_fn}]"))
                         cfg_fn <- env_cfg_fn
                     } else {
                         #print(glue::glue("Using dflt_cfg_fn: {dflt_cfg_fn}"))
                         cfg_fn = dflt_cfg_fn
                     }
                     if (!is.na(opt_cfg_path)) {
-                        #print(glue::glue("Using option haywoodcc.cfg.path [{opt_cfg_path}]"))
+                        #print(glue::glue("Using option ccdwr.cfg.path [{opt_cfg_path}]"))
                         cfg_path <- opt_cfg_path
                     } else if (!is.na(env_cfg_path) && (env_cfg_path != "")) {
-                        #print(glue::glue("Using environtment HAYWOODCC_CFG_PATH [{env_cfg_path}]"))
+                        #print(glue::glue("Using environment CCDWR_CFG_PATH [{env_cfg_path}]"))
                         cfg_path <- env_cfg_path
                     } else {
                         #print(glue::glue("Using dflt_cfg_path: {dflt_cfg_path}"))
@@ -132,10 +132,10 @@ getCfg <- function( cfg_full_path=NA_character_,
                 if (!is.na(cfg_fn)) {
                     #print(glue::glue("Using cfg_fn: {cfg_fn}"))
                 } else if (!is.na(opt_cfg_fn)) {
-                    #print(glue::glue("Using option haywoodcc.cfg.fn [{opt_cfg_fn}]"))
+                    #print(glue::glue("Using option ccdwr.cfg.fn [{opt_cfg_fn}]"))
                     cfg_fn <- opt_cfg_fn
                 } else if (!is.na(env_cfg_fn) && (env_cfg_fn != "")) {
-                    #print(glue::glue("Using environtment HAYWOODCC_CFG_FN [{env_cfg_fn}]"))
+                    #print(glue::glue("Using environment CCDWR_CFG_FN [{env_cfg_fn}]"))
                     cfg_fn <- env_cfg_fn
                 } else {
                     #print(glue::glue("Using dflt_cfg_fn: {dflt_cfg_fn}"))
@@ -144,10 +144,10 @@ getCfg <- function( cfg_full_path=NA_character_,
                 if (!is.na(cfg_path)) {
                     #print(glue::glue("Using cfg_path: {cfg_path}"))
                 } else if (!is.na(opt_cfg_path)) {
-                    #print(glue::glue("Using option haywoodcc.cfg.path [{opt_cfg_path}]"))
+                    #print(glue::glue("Using option ccdwr.cfg.path [{opt_cfg_path}]"))
                     cfg_path <- opt_cfg_path
                 } else if (!is.na(env_cfg_path) && (env_cfg_path != "")) {
-                    #print(glue::glue("Using environtment HAYWOODCC_CFG_PATH [{env_cfg_path}]"))
+                    #print(glue::glue("Using environment CCDWR_CFG_PATH [{env_cfg_path}]"))
                     cfg_path <- env_cfg_path
                 } else {
                     #print(glue::glue("Using dflt_cfg_path: {dflt_cfg_path}"))
@@ -280,7 +280,7 @@ setCfg <- function( section, variable, value,
 #' @export
 #'
 getColleagueData <- function( file,
-                              schema="history", version="latest",
+                              schema=NA_character_, version=NA_character_,
                               from_file_path=NA_character_,
                               sep='.', ext="csv",
                               #cols=NA_character_,
@@ -302,21 +302,57 @@ getColleagueData <- function( file,
     }
 
     if ("data_source" %nin% names(cfg)) {
-        cfg$data_source$from_file_path <- NA_character_
-    } else if ("from_file_path" %nin% names(cfg$data_source)) {
+        if (!is.na(cfg$data_source$from_file_path)) {
+            cfg$data_source$dbtype <- "file"
+        } else {
+            cfg$data_source$dbtype <- "ccdw"
+        }
+    } else if ("dbtype" %nin% names(cfg$data_source)) {
+        if (!is.na(cfg$data_source$from_file_path)) {
+            cfg$data_source$dbtype <- "file"
+        } else {
+            cfg$data_source$dbtype <- "ccdw"
+        }
+    }
+
+    if ("from_file_path" %nin% names(cfg$data_source)) {
         cfg$data_source$from_file_path <- NA_character_
     }
+
+    cfg_dbtype <- tolower(cfg$data_source$dbtype)
 
     if (!is.na(from_file_path)) {
         cfg_from_file_path = from_file_path
-    } else {
+        cfg_dbtype <- "file"
+    } else if (cfg_dbtype == "file") {
         cfg_from_file_path = cfg$data_source$from_file_path
     }
 
-    if (is.na(cfg_from_file_path)) {
-        conn_str <- stringr::str_c( glue::glue("Driver={<<cfg$sql$driver>>}", .open = "<<", .close = ">>"),
-                                    glue::glue("Server={<<cfg$sql$server>>}", .open = "<<", .close = ">>"),
-                                    glue::glue("Database={<<cfg$sql$db>>}", .open = "<<", .close = ">>"),
+    if (is.na(schema)) {
+        if (cfg_dbtype == "ccdw") {
+            schema <- "history"
+        }
+
+        if ("sql" %in% names(cfg)) {
+            if ("schema_default" %in% names(cfg$sql)) {
+                schema <- cfg$sql$schema_default
+            }
+        }
+
+        if (is.na(schema)) {
+            error(str_glue("You must either pass schema as a parameter ",
+                           "or define a schema_default value under sql in ",
+                           "your configuration file"))
+        }
+    }
+
+    if (cfg_dbtype != "file") {
+        conn_str <- stringr::str_c( glue::glue("Driver={<<cfg$sql$driver>>}",
+                                               .open = "<<", .close = ">>"),
+                                    glue::glue("Server={<<cfg$sql$server>>}",
+                                               .open = "<<", .close = ">>"),
+                                    glue::glue("Database={<<cfg$sql$db>>}",
+                                               .open = "<<", .close = ">>"),
                                     "Trusted_Connection=Yes",
                                     "Description=Informer.r:getColleagueData()",
                                     sep=";"
@@ -324,12 +360,12 @@ getColleagueData <- function( file,
 
         ccdwconn <- odbc::dbConnect( odbc::odbc(), .connection_string=conn_str )
 
-        schema_history <- cfg$sql$schema_history
-
         df <- dplyr::tbl(ccdwconn, dbplyr::in_schema(schema, file) )
 
-        if (version == "latest" & schema=="history") {
-            df %<>% filter( CurrentFlag == "Y" )
+        if (cfg_dbtype == "ccdw") {
+            if (version == "latest" & schema=="history") {
+                df %<>% filter( CurrentFlag == "Y" )
+            }
         }
 
     } else {
