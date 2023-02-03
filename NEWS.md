@@ -1,3 +1,13 @@
+# ccdwr 1.0.7
+
+## New features
+
+Added checks for use of Core Technologies tools.
+
+## Changes
+
+Added database option to getColleagueData to allow referencing different databases.
+
 # ccdwr 1.0.6
 
 ## New features

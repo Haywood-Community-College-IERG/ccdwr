@@ -281,6 +281,7 @@ setCfg <- function( section, variable, value,
 #'
 getColleagueData <- function( file,
                               schema=NA_character_, version=NA_character_,
+                              db=NA_character_,
                               from_file_path=NA_character_,
                               sep='.', ext="csv",
                               #cols=NA_character_,
@@ -347,11 +348,15 @@ getColleagueData <- function( file,
     }
 
     if (cfg_dbtype != "file") {
+        if (is.na(db)) {
+            db <- cfg$sql$db
+        }
+
         conn_str <- stringr::str_c( glue::glue("Driver={<<cfg$sql$driver>>}",
                                                .open = "<<", .close = ">>"),
                                     glue::glue("Server={<<cfg$sql$server>>}",
                                                .open = "<<", .close = ">>"),
-                                    glue::glue("Database={<<cfg$sql$db>>}",
+                                    glue::glue("Database={<<db>>}",
                                                .open = "<<", .close = ">>"),
                                     "Trusted_Connection=Yes",
                                     "Description=Informer.r:getColleagueData()",
