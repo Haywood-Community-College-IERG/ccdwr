@@ -1,7 +1,7 @@
 Package: ccdwr
 Title: Collection of R functions for use with Colleague data and/or the 
     Community College Data Warehouse system (CCDW)
-Version: 1.0.7
+Version: 1.0.8
 Authors@R: person("David", "Onder", email = "donder@haywood.edu", role = c("aut", "cre"))
 Description: Collection of R functions for use with Colleague data and/or the 
     Community College Data Warehouse system (CCDW). These functions make it 

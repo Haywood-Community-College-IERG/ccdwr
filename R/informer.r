@@ -30,6 +30,7 @@ pkg_common_reload_params <- function() {
 #' @importFrom glue glue
 #' @importFrom yaml yaml.load_file
 #' @importFrom fs path
+#' @importFrom cli cli_alert_info cli_warn
 #'
 #' @return A configuration dataframe.
 #' @export
@@ -165,7 +166,7 @@ getCfg <- function( cfg_full_path=NA_character_,
             }
         }
 
-        warning(glue::glue("Loading configuration from [{cfg_full_path}]"))
+        cli::cli_alert_info(glue::glue("Loading configuration from [{cfg_full_path}]"))
 
         if (fs::file_exists(cfg_full_path)) {
             #print(glue::glue("DEBUG: Current dir = [{getwd()}]"))
@@ -185,13 +186,13 @@ getCfg <- function( cfg_full_path=NA_character_,
                 if ("location" %in% names(cfg_l$config)) {
                     if (cfg_l$config$location != "self") {
                         cfg_full_path <- fs::path(cfg_l$config$location,cfg_fn)
-                        warning(glue::glue("Redirecting loading configuration from [{cfg_full_path}]"))
+                        cli::cli_alert_info(glue::glue("Redirecting loading configuration from [{cfg_full_path}]"))
                     }
                 } else {
                     if ("location" %in% names(cfg_l)) {
                         if (cfg_l$location != "self") {
                             cfg_full_path <- fs::path(cfg_l$location,cfg_fn)
-                            warning(glue::glue("Redirecting loading configuration from [{cfg_full_path}]"))
+                            cli::cli_alert_info(glue::glue("Redirecting loading configuration from [{cfg_full_path}]"))
                         }
                     } # else self assumed
                 } # else self assumed
@@ -208,7 +209,7 @@ getCfg <- function( cfg_full_path=NA_character_,
             rlang::env_poke(pkg.env, "cfg", cfg)
             #assign("cfg", cfg, envir=pkg.env)
         } else {
-            warning(glue::glue("Configuration not found [{cfg_full_path}]"))
+            cli::cli_warn(glue::glue("Configuration not found [{cfg_full_path}]"))
         }
     } #else {
         #cfg <- rlang::env_get(pkg.env, "cfg", default=NA)
@@ -274,6 +275,7 @@ setCfg <- function( section, variable, value,
 #' @importFrom dplyr tbl filter
 #' @importFrom dbplyr in_schema
 #' @importFrom readr read_csv cols col_character
+#' @importFrom cli cli_abort
 #'
 #' @return The requested data in a dataframe.
 #'
@@ -392,7 +394,7 @@ getColleagueData <- function( file,
                     csvfile <- glue::glue("^{file}.*{ext}")
                 } else {
                     csvfile <- NA_character_
-                    stop(glue::glue("ERROR: File not found: {file}"))
+                    cli_abort(glue::glue("ERROR: File not found: {file}"))
                 }
             }
         }

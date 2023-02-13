@@ -1,3 +1,13 @@
+# ccdwr 1.0.8
+
+## New features
+
+None.
+
+## Changes
+
+Added package cli and used for information, warning, and abort conditions.
+
 # ccdwr 1.0.7
 
 ## New features
