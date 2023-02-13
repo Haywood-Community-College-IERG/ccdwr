@@ -1,3 +1,13 @@
+# ccdwr 1.0.10
+
+## New features
+
+None.
+
+## Changes
+
+Fixed error setting schema and version to defaults.
+
 # ccdwr 1.0.9
 
 ## New features

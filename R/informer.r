@@ -334,19 +334,31 @@ getColleagueData <- function( file,
 
     if (is.na(schema)) {
         if (cfg_dbtype == "ccdw") {
-            schema <- "history"
+            schema <- purrr::pluck(cfg$sql$schema_history, .default = "history")
         }
 
-        if ("sql" %in% names(cfg)) {
-            if ("schema_default" %in% names(cfg$sql)) {
-                schema <- cfg$sql$schema_default
-            }
+        # If still no schema, check for schema_default in config
+        if (is.na(schema)) {
+            schema <- purrr::pluck(cfg$sql$schema_default, .default = NA_character_)
+            #if ("sql" %in% names(cfg)) {
+                #if ("schema_default" %in% names(cfg$sql)) {
+                    #schema <- cfg$sql$schema_default
+                #}
+            #}
         }
 
         if (is.na(schema)) {
-            error(str_glue("You must either pass schema as a parameter ",
-                           "or define a schema_default value under sql in ",
-                           "your configuration file"))
+            cli::cli_abort(str_glue("You must either pass schema as a parameter ",
+                                    "or define a schema_default value under sql in ",
+                                    "your configuration file"))
+        }
+    }
+
+    if (is.na(version)) {
+        if (cfg_dbtype == "ccdw") {
+            version = "latest"
+        } else {
+            version = ""
         }
     }
 
