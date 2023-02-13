@@ -305,13 +305,14 @@ getColleagueData <- function( file,
     }
 
     if ("data_source" %nin% names(cfg)) {
-        if (!is.na(cfg$data_source$from_file_path)) {
+        if (!rlang::is_null(purrr::pluck(cfg$data_source$from_file_path))) {
             cfg$data_source$dbtype <- "file"
         } else {
             cfg$data_source$dbtype <- "ccdw"
         }
     } else if ("dbtype" %nin% names(cfg$data_source)) {
-        if (!is.na(cfg$data_source$from_file_path)) {
+        if (!rlang::is_null(purrr::pluck(cfg$data_source$from_file_path)))
+            {
             cfg$data_source$dbtype <- "file"
         } else {
             cfg$data_source$dbtype <- "ccdw"

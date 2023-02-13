@@ -1,3 +1,13 @@
+# ccdwr 1.0.9
+
+## New features
+
+None.
+
+## Changes
+
+Convert some is.na checks to purrr::pluck calls.
+
 # ccdwr 1.0.8
 
 ## New features
