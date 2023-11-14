@@ -53,18 +53,18 @@ getCfg <- function( cfg_full_path=NA_character_,
         # then use that, Otherwise, do the first from...
         #
         # 1. Look for the file name and path parts in the current folder.
-        # 2. Check for environment variables CCDWR_CFG_FULL_PATH, CCDWR_CFG_PATH, CCDWR_CFG_FN.
-        # 3. Check for ccdwr.cfg.full_path, ccdwr.cfg.path, ccdwr.cfg.fn options.
+        # 2. Check for environment variables CCDW_CFG_FULL_PATH, CCDW_CFG_PATH, CCDW_CFG_FN.
+        # 3. Check for ccdw.cfg.full_path, ccdw.cfg.path, ccdw.cfg.fn options.
         # 4. Return NA
         # TODO: This needs to be fixed to reflect the above comment
 
-        opt_cfg_full_path <- getOption("ccdwr.cfg.full_path", default=NA_character_)
-        opt_cfg_fn <- getOption("ccdwr.cfg.fn", default=NA_character_)
-        opt_cfg_path <- getOption("ccdwr.cfg.path", default=NA_character_)
+        opt_cfg_full_path <- getOption("ccdw.cfg.full_path", default=NA_character_)
+        opt_cfg_fn <- getOption("ccdw.cfg.fn", default=NA_character_)
+        opt_cfg_path <- getOption("ccdw.cfg.path", default=NA_character_)
 
-        env_cfg_full_path <- Sys.getenv("CCDWR_CFG_FULL_PATH")
-        env_cfg_fn <- Sys.getenv("CCDWR_CFG_FN")
-        env_cfg_path <- Sys.getenv("CCDWR_CFG_PATH")
+        env_cfg_full_path <- Sys.getenv("CCDW_CFG_FULL_PATH")
+        env_cfg_fn <- Sys.getenv("CCDW_CFG_FN")
+        env_cfg_path <- Sys.getenv("CCDW_CFG_PATH")
 
         if (is.na(cfg_full_path) && is.na(cfg_fn) && is.na(cfg_path)) {
 
@@ -76,12 +76,12 @@ getCfg <- function( cfg_full_path=NA_character_,
                 cfg_full_path <- fs::path(dflt_cfg_path,dflt_cfg_fn)
             } else {
 
-                # 2. Check for environment variables CCDWR_CFG_FULL_PATH, CCDWR_CFG_PATH, CCDWR_CFG_FN.
+                # 2. Check for environment variables CCDW_CFG_FULL_PATH, CCDW_CFG_PATH, CCDW_CFG_FN.
                 if (!is.na(env_cfg_full_path) && (env_cfg_full_path != "")) {
                     cfg_full_path = env_cfg_full_path
                 } else if (!is.na(env_cfg_fn) || !is.na(env_cfg_path)) {
                     if (!is.na(env_cfg_fn) && (env_cfg_fn != "")) {
-                        #print(glue::glue("Using environment CCDWR_CFG_FN [{env_cfg_fn}]"))
+                        #print(glue::glue("Using environment CCDW_CFG_FN [{env_cfg_fn}]"))
                         cfg_fn <- env_cfg_fn
                     } else {
                         #print(glue::glue("Using dflt_cfg_fn: {dflt_cfg_fn}"))
@@ -89,7 +89,7 @@ getCfg <- function( cfg_full_path=NA_character_,
                     }
 
                     if (!is.na(env_cfg_path) && (env_cfg_path != "")) {
-                        #print(glue::glue("Using environment CCDWR_CFG_PATH [{env_cfg_path}]"))
+                        #print(glue::glue("Using environment CCDW_CFG_PATH [{env_cfg_path}]"))
                         cfg_path <- env_cfg_path
                     } else {
                         #print(glue::glue("Using dflt_cfg_path: {dflt_cfg_path}"))
@@ -98,26 +98,26 @@ getCfg <- function( cfg_full_path=NA_character_,
 
                     cfg_full_path <- fs::path(cfg_path,cfg_fn)
 
-                # 3. Check for ccdwr.cfg.full_path, ccdwr.cfg.path, ccdwr.cfg.fn options.
+                # 3. Check for ccdw.cfg.full_path, ccdw.cfg.path, ccdw.cfg.fn options.
                 } else if (!is.na(opt_cfg_full_path) && (opt_cfg_full_path != "")) {
-                    #print(glue::glue("Using option ccdwr.cfg.full_path [{opt_cfg_full_path}]"))
+                    #print(glue::glue("Using option ccdw.cfg.full_path [{opt_cfg_full_path}]"))
                     cfg_full_path = opt_cfg_full_path
                 } else if (!is.na(opt_cfg_fn) || !is.na(opt_cfg_path)) {
                     if (!is.na(opt_cfg_fn)) {
-                        #print(glue::glue("Using option ccdwr.cfg.fn [{opt_cfg_fn}]"))
+                        #print(glue::glue("Using option ccdw.cfg.fn [{opt_cfg_fn}]"))
                         cfg_fn <- opt_cfg_fn
                     } else if (!is.na(env_cfg_fn) && (env_cfg_fn != "")) {
-                        #print(glue::glue("Using environment CCDWR_CFG_FN [{env_cfg_fn}]"))
+                        #print(glue::glue("Using environment CCDW_CFG_FN [{env_cfg_fn}]"))
                         cfg_fn <- env_cfg_fn
                     } else {
                         #print(glue::glue("Using dflt_cfg_fn: {dflt_cfg_fn}"))
                         cfg_fn = dflt_cfg_fn
                     }
                     if (!is.na(opt_cfg_path)) {
-                        #print(glue::glue("Using option ccdwr.cfg.path [{opt_cfg_path}]"))
+                        #print(glue::glue("Using option ccdw.cfg.path [{opt_cfg_path}]"))
                         cfg_path <- opt_cfg_path
                     } else if (!is.na(env_cfg_path) && (env_cfg_path != "")) {
-                        #print(glue::glue("Using environment CCDWR_CFG_PATH [{env_cfg_path}]"))
+                        #print(glue::glue("Using environment CCDW_CFG_PATH [{env_cfg_path}]"))
                         cfg_path <- env_cfg_path
                     } else {
                         #print(glue::glue("Using dflt_cfg_path: {dflt_cfg_path}"))
@@ -133,10 +133,10 @@ getCfg <- function( cfg_full_path=NA_character_,
                 if (!is.na(cfg_fn)) {
                     #print(glue::glue("Using cfg_fn: {cfg_fn}"))
                 } else if (!is.na(opt_cfg_fn)) {
-                    #print(glue::glue("Using option ccdwr.cfg.fn [{opt_cfg_fn}]"))
+                    #print(glue::glue("Using option ccdw.cfg.fn [{opt_cfg_fn}]"))
                     cfg_fn <- opt_cfg_fn
                 } else if (!is.na(env_cfg_fn) && (env_cfg_fn != "")) {
-                    #print(glue::glue("Using environment CCDWR_CFG_FN [{env_cfg_fn}]"))
+                    #print(glue::glue("Using environment CCDW_CFG_FN [{env_cfg_fn}]"))
                     cfg_fn <- env_cfg_fn
                 } else {
                     #print(glue::glue("Using dflt_cfg_fn: {dflt_cfg_fn}"))
@@ -145,10 +145,10 @@ getCfg <- function( cfg_full_path=NA_character_,
                 if (!is.na(cfg_path)) {
                     #print(glue::glue("Using cfg_path: {cfg_path}"))
                 } else if (!is.na(opt_cfg_path)) {
-                    #print(glue::glue("Using option ccdwr.cfg.path [{opt_cfg_path}]"))
+                    #print(glue::glue("Using option ccdw.cfg.path [{opt_cfg_path}]"))
                     cfg_path <- opt_cfg_path
                 } else if (!is.na(env_cfg_path) && (env_cfg_path != "")) {
-                    #print(glue::glue("Using environment CCDWR_CFG_PATH [{env_cfg_path}]"))
+                    #print(glue::glue("Using environment CCDW_CFG_PATH [{env_cfg_path}]"))
                     cfg_path <- env_cfg_path
                 } else {
                     #print(glue::glue("Using dflt_cfg_path: {dflt_cfg_path}"))
