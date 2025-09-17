@@ -598,6 +598,8 @@ getColleagueData_SQL <- function(
     if (sep != '.') {
         names(df) <- gsub("\\.", sep, names(df))
     }
+
+    getColleagueData_SQL <- df
 }
 
 debug_test <- function() {
