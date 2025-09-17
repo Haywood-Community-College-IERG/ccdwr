@@ -6,8 +6,9 @@
 \usage{
 getColleagueData(
   file,
-  schema = "history",
-  version = "latest",
+  schema = NA_character_,
+  version = NA_character_,
+  db = NA_character_,
   from_file_path = NA_character_,
   sep = ".",
   ext = "csv",
@@ -25,13 +26,15 @@ getColleagueData(
 
 \item{version}{Specify which version to include. Default is for the latest data. Any other value will return the dated file.}
 
+\item{db}{The database to use. Defaults to the database specified in the configuration file.}
+
 \item{from_file_path}{Specify path for file. This overrides the use of the database. Defaults to NA.}
 
 \item{sep}{The separator to use in the field names. Default is a '.' as in the original Colleague file.}
 
 \item{ext}{The extention to use for files.}
 
-\item{cfg}{A YAML configuration file with `sql` section that includes `driver` `server`, `db`, and `schema_history`.}
+\item{cfg}{A YAML configuration file with `sql` section that includes `driver` `server`, `db`, and `schema_default`.}
 
 \item{cfg_full_path}{Provide the full path to the YAML configuration file. Defaults to NA.}
 
