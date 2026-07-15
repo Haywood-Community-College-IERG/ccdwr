@@ -276,6 +276,89 @@ setCfg <- function(
     rlang::env_poke(pkg.env, "cfg", cfg)
 }
 
+#' (internal) Return a lazy tbl on the DuckDB mirror, or NULL when the mirror
+#' cannot serve the request (not enabled, file missing, stale, or the object
+#' is not mirrored). With require=TRUE, failures abort with the reason instead.
+#'
+#' @param cfg The configuration list.
+#' @param schema Schema of the requested object.
+#' @param file Name of the requested object.
+#' @param require If TRUE, abort with a message instead of returning NULL.
+#'
+#' @importFrom rlang env_get env_poke
+#' @importFrom cli cli_abort
+#'
+mirror_tbl <- function(cfg, schema, file, require = FALSE) {
+    say <- function(msg) {
+        if (require) cli::cli_abort(msg)
+        NULL
+    }
+
+    dk <- cfg$duckdb
+    if (is.null(dk) || is.null(dk$path)) {
+        return(say("DuckDB mirror is not configured (duckdb: path in config.yml)"))
+    }
+    enabled <- isTRUE(dk$mirror) || identical(dk$mirror, "true")
+    if (!enabled && !require) {
+        return(NULL)
+    }
+    if (!requireNamespace("duckdb", quietly = TRUE)) {
+        return(say("Package {.pkg duckdb} is not installed"))
+    }
+    if (!file.exists(dk$path)) {
+        return(say(paste0("Mirror file not found: ", dk$path)))
+    }
+
+    con <- rlang::env_get(pkg.env, "mirror_con", default = NULL)
+    if (is.null(con) || !DBI::dbIsValid(con)) {
+        con <- DBI::dbConnect(duckdb::duckdb(), dbdir = dk$path, read_only = TRUE)
+        rlang::env_poke(pkg.env, "mirror_con", con)
+    }
+
+    fresh <- tryCatch({
+        info <- DBI::dbGetQuery(con, "SELECT built_at FROM meta._mirror_info LIMIT 1")
+        age_h <- as.numeric(difftime(Sys.time(), info$built_at[1], units = "hours"))
+        max_age <- suppressWarnings(as.numeric(dk$mirror_max_age_hours))
+        if (!is.finite(max_age)) max_age <- 36
+        is.finite(age_h) && age_h <= max_age
+    }, error = function(e) FALSE)
+    if (!fresh) {
+        return(say("Mirror is stale (or missing meta._mirror_info)"))
+    }
+
+    has_object <- tryCatch(
+        nrow(DBI::dbGetQuery(con, glue::glue(
+            "SELECT 1 FROM information_schema.tables ",
+            "WHERE table_schema = '{schema}' AND table_name = '{file}' LIMIT 1"
+        ))) > 0,
+        error = function(e) FALSE
+    )
+    if (!has_object) {
+        return(say(glue::glue("Mirror does not contain {schema}.{file}")))
+    }
+
+    dplyr::tbl(con, I(glue::glue('"{schema}"."{file}"')))
+}
+
+#' Close the cached DuckDB mirror connection.
+#'
+#' The mirror connection is opened read-only and cached for the session. Call
+#' this to release the file handle (for example so the nightly rebuild can
+#' swap the mirror file).
+#'
+#' @return TRUE, invisibly.
+#'
+#' @export
+#'
+closeMirror <- function() {
+    con <- rlang::env_get(pkg.env, "mirror_con", default = NULL)
+    if (!is.null(con) && DBI::dbIsValid(con)) {
+        DBI::dbDisconnect(con, shutdown = TRUE)
+    }
+    rlang::env_poke(pkg.env, "mirror_con", NULL)
+    invisible(TRUE)
+}
+
 #' Return a data from data warehouse Colleague tables.
 #'
 #' Return a data from of the IPEDS cohort data. Data will come either from the file ipeds_cohorts.csv of
@@ -283,6 +366,10 @@ setCfg <- function(
 #'
 #' @param file The name of the Colleague file to return
 #' @param db The database to use. Defaults to the database specified in the configuration file.
+#' @param source Where to read from: "auto" (DuckDB mirror when enabled, fresh,
+#'     and it has the object; otherwise the server), "server", or "mirror"
+#'     (abort rather than fall back). The mirror only serves the default CCDW
+#'     database. Default "auto".
 #' @param schema Which schema should be used. Needed for non-Colleague tables.
 #' @param version Specify which version to include. Default is for the latest data. Any other value will return the dated file.
 #' @param from_file_path Specify path for file. This overrides the use of the database. Defaults to NA.
@@ -320,7 +407,8 @@ getColleagueData <- function(
     cfg_full_path = NA_character_,
     cfg_fn = NA_character_,
     cfg_path = NA_character_,
-    reload = FALSE
+    reload = FALSE,
+    source = "auto"
 ) {
     # This is to remove the package build error: no visible global function definition for ...
     CurrentFlag <- NULL
@@ -401,30 +489,47 @@ getColleagueData <- function(
     }
 
     if (cfg_dbtype != "file") {
-        if (is.na(db)) {
-            db <- cfg$sql$db
+        df <- NULL
+
+        # The DuckDB mirror only serves the default CCDW database. Try it
+        # first when enabled/fresh, unless the server was explicitly
+        # requested; source="mirror" aborts instead of falling back.
+        mirror_eligible <- cfg_dbtype == "ccdw" &&
+            (is.na(db) || identical(db, cfg$sql$db))
+        if (source %in% c("auto", "mirror")) {
+            if (mirror_eligible) {
+                df <- mirror_tbl(cfg, schema, file, require = (source == "mirror"))
+            } else if (source == "mirror") {
+                cli::cli_abort("The DuckDB mirror only serves the default CCDW database")
+            }
         }
 
-        conn_str <- stringr::str_c(
-            glue::glue(
-                "Driver={<<cfg$sql$driver>>}",
-                .open = "<<",
-                .close = ">>"
-            ),
-            glue::glue(
-                "Server={<<cfg$sql$server>>}",
-                .open = "<<",
-                .close = ">>"
-            ),
-            glue::glue("Database={<<db>>}", .open = "<<", .close = ">>"),
-            "Trusted_Connection=Yes",
-            "Description=Informer.r:getColleagueData()",
-            sep = ";"
-        )
+        if (is.null(df)) {
+            if (is.na(db)) {
+                db <- cfg$sql$db
+            }
 
-        ccdwconn <- odbc::dbConnect(odbc::odbc(), .connection_string = conn_str)
+            conn_str <- stringr::str_c(
+                glue::glue(
+                    "Driver={<<cfg$sql$driver>>}",
+                    .open = "<<",
+                    .close = ">>"
+                ),
+                glue::glue(
+                    "Server={<<cfg$sql$server>>}",
+                    .open = "<<",
+                    .close = ">>"
+                ),
+                glue::glue("Database={<<db>>}", .open = "<<", .close = ">>"),
+                "Trusted_Connection=Yes",
+                "Description=Informer.r:getColleagueData()",
+                sep = ";"
+            )
 
-        df <- dplyr::tbl(ccdwconn, dbplyr::in_schema(schema, file))
+            ccdwconn <- odbc::dbConnect(odbc::odbc(), .connection_string = conn_str)
+
+            df <- dplyr::tbl(ccdwconn, dbplyr::in_schema(schema, file))
+        }
 
         if (cfg_dbtype == "ccdw") {
             if (version == "latest" & schema == "history") {
