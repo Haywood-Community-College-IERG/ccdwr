@@ -26,6 +26,41 @@ The mirror freshness check reads the build time from `_extract.info` (used by
 current mirror builds), falling back to `meta._mirror_info`. Before this, a
 current mirror always looked stale and every call went to the server.
 
+# ccdwr 1.1.0
+
+## New features
+
+`getColleagueData()` can read from a local DuckDB mirror of the CCDW. Enable
+it in the configuration file with `duckdb: mirror: true`, `duckdb: path:`,
+and optionally `duckdb: mirror_max_age_hours:` (default 36). The mirror
+returns the same lazy dbplyr table as the server, so downstream dplyr code
+is unchanged, including the `version = "latest"` `CurrentFlag` filter.
+
+New `source` argument for `getColleagueData()`: "auto" (default) uses the
+mirror when it exists, is fresh, and contains the requested table, and
+otherwise uses the server; "server" always uses the server; "mirror" aborts
+instead of falling back. The mirror only serves the default CCDW database,
+so `db =` overrides always go to the server.
+
+New `closeMirror()` releases the cached read-only mirror connection, for
+example so the mirror file can be rebuilt.
+
+## Changes
+
+duckdb added to Suggests; DBI added to Imports.
+
+# ccdwr 1.0.11
+
+## New features
+
+New `getColleagueData_SQL()` runs a SQL query against the CCDW database
+and returns the result as a data frame.
+
+## Changes
+
+Renamed the configuration environment variables from `CCDWR_CFG_*` to
+`CCDW_CFG_*` and the options from `ccdwr.cfg.*` to `ccdw.cfg.*`.
+
 # ccdwr 1.0.10
 
 ## New features
