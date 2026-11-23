@@ -12,11 +12,13 @@ getColleagueData_SQL(
   cfg_full_path = NA_character_,
   cfg_fn = NA_character_,
   cfg_path = NA_character_,
-  reload = FALSE
+  reload = FALSE,
+  source = "auto",
+  translate = TRUE
 )
 }
 \arguments{
-\item{sql}{The query to run.}
+\item{sql}{The query to run, written for SQL Server (T-SQL).}
 
 \item{db}{The database to use. Defaults to the database specified in the configuration file.}
 
@@ -32,7 +34,13 @@ getColleagueData_SQL(
 
 \item{reload}{Force a reload of the config.}
 
-\item{ext}{The extention to use for files.}
+\item{source}{Where to run the query: "auto" (the DuckDB mirror when it
+is enabled and fresh, otherwise the server), "server", or "mirror"
+(abort rather than fall back). Default "auto".}
+
+\item{translate}{When running on the mirror, translate the query from
+T-SQL to DuckDB SQL first with [translateSQL_DuckDB()]. Set to FALSE
+when `sql` is already written for DuckDB. Default TRUE.}
 }
 \value{
 The requested data in a dataframe.

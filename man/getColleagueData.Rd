@@ -16,7 +16,8 @@ getColleagueData(
   cfg_full_path = NA_character_,
   cfg_fn = NA_character_,
   cfg_path = NA_character_,
-  reload = FALSE
+  reload = FALSE,
+  source = "auto"
 )
 }
 \arguments{
@@ -43,6 +44,11 @@ getColleagueData(
 \item{cfg_path}{The file path to the YAML configuration file. Defaults to '.'.}
 
 \item{reload}{Force a reload of the config.}
+
+\item{source}{Where to read from: "auto" (DuckDB mirror when enabled, fresh,
+and it has the object; otherwise the server), "server", or "mirror"
+(abort rather than fall back). The mirror only serves the default CCDW
+database. Default "auto".}
 }
 \value{
 The requested data in a dataframe.

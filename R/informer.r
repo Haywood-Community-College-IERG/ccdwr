@@ -18,6 +18,77 @@ pkg_common_reload_params <- function() {
     )
 }
 
+# Is x a single, non-missing, non-empty string?
+has_value <- function(x) {
+    !is.null(x) && length(x) == 1 && !is.na(x) && nzchar(x)
+}
+
+# Work out which configuration file getCfg() should load.
+resolve_cfg_full_path <- function(
+    cfg_full_path,
+    cfg_fn,
+    cfg_path,
+    dflt_cfg_fn = "config.yml",
+    dflt_cfg_path = "."
+) {
+    opt_full_path <- getOption("ccdw.cfg.full_path", default = NA_character_)
+    opt_fn <- getOption("ccdw.cfg.fn", default = NA_character_)
+    opt_path <- getOption("ccdw.cfg.path", default = NA_character_)
+
+    env_full_path <- Sys.getenv("CCDW_CFG_FULL_PATH")
+    env_fn <- Sys.getenv("CCDW_CFG_FN")
+    env_path <- Sys.getenv("CCDW_CFG_PATH")
+
+    first_of <- function(...) {
+        for (x in list(...)) {
+            if (has_value(x)) return(x)
+        }
+        NA_character_
+    }
+
+    # Explicit arguments win
+    if (has_value(cfg_full_path)) {
+        return(fs::path(cfg_full_path))
+    }
+    if (has_value(cfg_fn) || has_value(cfg_path)) {
+        return(fs::path(
+            first_of(cfg_path, opt_path, env_path, dflt_cfg_path),
+            first_of(cfg_fn, opt_fn, env_fn, dflt_cfg_fn)
+        ))
+    }
+
+    # 1. config.yml in the current folder
+    local_cfg <- fs::path(dflt_cfg_path, dflt_cfg_fn)
+    if (fs::file_exists(local_cfg)) {
+        return(local_cfg)
+    }
+
+    # 2. A full path: environment variable, then option
+    if (has_value(env_full_path)) {
+        return(fs::path(env_full_path))
+    }
+    if (has_value(opt_full_path)) {
+        return(fs::path(opt_full_path))
+    }
+
+    # 3. Path and/or file name parts: environment variables, then options
+    if (has_value(env_fn) || has_value(env_path)) {
+        return(fs::path(
+            first_of(env_path, dflt_cfg_path),
+            first_of(env_fn, dflt_cfg_fn)
+        ))
+    }
+    if (has_value(opt_fn) || has_value(opt_path)) {
+        return(fs::path(
+            first_of(opt_path, dflt_cfg_path),
+            first_of(opt_fn, dflt_cfg_fn)
+        ))
+    }
+
+    # 4. Default
+    local_cfg
+}
+
 #' Load the YAML configuration file.
 #'
 #' Load the specified YAML configuration file. If no file is provided,
@@ -51,127 +122,22 @@ getCfg <- function(
         # Use a cached version unless reload is specified.
         #
         # If a parameter was passed for cfg_full_path, cfg_fn, or cfg_path,
-        # then use that, Otherwise, do the first from...
+        # use it (filling any missing part from options, then environment
+        # variables, then defaults). Otherwise use the first of...
         #
-        # 1. Look for the file name and path parts in the current folder.
-        # 2. Check for environment variables CCDW_CFG_FULL_PATH, CCDW_CFG_PATH, CCDW_CFG_FN.
-        # 3. Check for ccdw.cfg.full_path, ccdw.cfg.path, ccdw.cfg.fn options.
-        # 4. Return NA
-        # TODO: This needs to be fixed to reflect the above comment
-
-        opt_cfg_full_path <- getOption(
-            "ccdw.cfg.full_path",
-            default = NA_character_
+        # 1. config.yml in the current folder.
+        # 2. A full path: CCDW_CFG_FULL_PATH, then option ccdw.cfg.full_path.
+        # 3. Parts: CCDW_CFG_PATH/CCDW_CFG_FN, then options ccdw.cfg.path/ccdw.cfg.fn.
+        # 4. ./config.yml (a warning is issued if it does not exist).
+        cfg_full_path <- resolve_cfg_full_path(
+            cfg_full_path = cfg_full_path,
+            cfg_fn = cfg_fn,
+            cfg_path = cfg_path,
+            dflt_cfg_fn = dflt_cfg_fn,
+            dflt_cfg_path = dflt_cfg_path
         )
-        opt_cfg_fn <- getOption("ccdw.cfg.fn", default = NA_character_)
-        opt_cfg_path <- getOption("ccdw.cfg.path", default = NA_character_)
-
-        env_cfg_full_path <- Sys.getenv("CCDW_CFG_FULL_PATH")
-        env_cfg_fn <- Sys.getenv("CCDW_CFG_FN")
-        env_cfg_path <- Sys.getenv("CCDW_CFG_PATH")
-
-        if (is.na(cfg_full_path) && is.na(cfg_fn) && is.na(cfg_path)) {
-            #print(glue::glue("WHATIS opt_cfg_full_path: {opt_cfg_full_path}"))
-            #print(glue::glue("WHATIS env_cfg_full_path: {env_cfg_full_path}"))
-
-            # 1. Look for the file name and path parts in the current folder.
-            if (fs::file_exists(fs::path(dflt_cfg_path, dflt_cfg_fn))) {
-                cfg_full_path <- fs::path(dflt_cfg_path, dflt_cfg_fn)
-            } else {
-                # 2. Check for environment variables CCDW_CFG_FULL_PATH, CCDW_CFG_PATH, CCDW_CFG_FN.
-                if (!is.na(env_cfg_full_path) && (env_cfg_full_path != "")) {
-                    cfg_full_path = env_cfg_full_path
-                } else if (!is.na(env_cfg_fn) || !is.na(env_cfg_path)) {
-                    if (!is.na(env_cfg_fn) && (env_cfg_fn != "")) {
-                        #print(glue::glue("Using environment CCDW_CFG_FN [{env_cfg_fn}]"))
-                        cfg_fn <- env_cfg_fn
-                    } else {
-                        #print(glue::glue("Using dflt_cfg_fn: {dflt_cfg_fn}"))
-                        cfg_fn = dflt_cfg_fn
-                    }
-
-                    if (!is.na(env_cfg_path) && (env_cfg_path != "")) {
-                        #print(glue::glue("Using environment CCDW_CFG_PATH [{env_cfg_path}]"))
-                        cfg_path <- env_cfg_path
-                    } else {
-                        #print(glue::glue("Using dflt_cfg_path: {dflt_cfg_path}"))
-                        cfg_path <- dflt_cfg_path
-                    }
-
-                    cfg_full_path <- fs::path(cfg_path, cfg_fn)
-
-                    # 3. Check for ccdw.cfg.full_path, ccdw.cfg.path, ccdw.cfg.fn options.
-                } else if (
-                    !is.na(opt_cfg_full_path) && (opt_cfg_full_path != "")
-                ) {
-                    #print(glue::glue("Using option ccdw.cfg.full_path [{opt_cfg_full_path}]"))
-                    cfg_full_path = opt_cfg_full_path
-                } else if (!is.na(opt_cfg_fn) || !is.na(opt_cfg_path)) {
-                    if (!is.na(opt_cfg_fn)) {
-                        #print(glue::glue("Using option ccdw.cfg.fn [{opt_cfg_fn}]"))
-                        cfg_fn <- opt_cfg_fn
-                    } else if (!is.na(env_cfg_fn) && (env_cfg_fn != "")) {
-                        #print(glue::glue("Using environment CCDW_CFG_FN [{env_cfg_fn}]"))
-                        cfg_fn <- env_cfg_fn
-                    } else {
-                        #print(glue::glue("Using dflt_cfg_fn: {dflt_cfg_fn}"))
-                        cfg_fn = dflt_cfg_fn
-                    }
-                    if (!is.na(opt_cfg_path)) {
-                        #print(glue::glue("Using option ccdw.cfg.path [{opt_cfg_path}]"))
-                        cfg_path <- opt_cfg_path
-                    } else if (!is.na(env_cfg_path) && (env_cfg_path != "")) {
-                        #print(glue::glue("Using environment CCDW_CFG_PATH [{env_cfg_path}]"))
-                        cfg_path <- env_cfg_path
-                    } else {
-                        #print(glue::glue("Using dflt_cfg_path: {dflt_cfg_path}"))
-                        cfg_path <- dflt_cfg_path
-                    }
-
-                    cfg_full_path <- fs::path(cfg_path, cfg_fn)
-                }
-            }
-        } else {
-            if (is.na(cfg_full_path)) {
-                if (!is.na(cfg_fn)) {
-                    #print(glue::glue("Using cfg_fn: {cfg_fn}"))
-                } else if (!is.na(opt_cfg_fn)) {
-                    #print(glue::glue("Using option ccdw.cfg.fn [{opt_cfg_fn}]"))
-                    cfg_fn <- opt_cfg_fn
-                } else if (!is.na(env_cfg_fn) && (env_cfg_fn != "")) {
-                    #print(glue::glue("Using environment CCDW_CFG_FN [{env_cfg_fn}]"))
-                    cfg_fn <- env_cfg_fn
-                } else {
-                    #print(glue::glue("Using dflt_cfg_fn: {dflt_cfg_fn}"))
-                    cfg_fn = dflt_cfg_fn
-                }
-                if (!is.na(cfg_path)) {
-                    #print(glue::glue("Using cfg_path: {cfg_path}"))
-                } else if (!is.na(opt_cfg_path)) {
-                    #print(glue::glue("Using option ccdw.cfg.path [{opt_cfg_path}]"))
-                    cfg_path <- opt_cfg_path
-                } else if (!is.na(env_cfg_path) && (env_cfg_path != "")) {
-                    #print(glue::glue("Using environment CCDW_CFG_PATH [{env_cfg_path}]"))
-                    cfg_path <- env_cfg_path
-                } else {
-                    #print(glue::glue("Using dflt_cfg_path: {dflt_cfg_path}"))
-                    cfg_path <- dflt_cfg_path
-                }
-
-                cfg_fn <- dplyr::if_else(is.na(cfg_fn), dflt_cfg_fn, cfg_fn)
-                cfg_path <- dplyr::if_else(
-                    is.na(cfg_path),
-                    dflt_cfg_path,
-                    cfg_path
-                )
-
-                #print(glue::glue("Using cfg_fn and cfg_path: {cfg_fn} and {cfg_path}"))
-
-                cfg_full_path <- fs::path(cfg_path, cfg_fn)
-            } else {
-                #print(glue::glue("Using cfg_full_path: {cfg_full_path}"))
-            }
-        }
+        # File name used when a config redirects to another location
+        cfg_fn <- fs::path_file(cfg_full_path)
 
         cli::cli_alert_info(glue::glue(
             "Loading configuration from [{cfg_full_path}]"
@@ -294,6 +260,34 @@ mirror_tbl <- function(cfg, schema, file, require = FALSE) {
         NULL
     }
 
+    con <- mirror_con(cfg, require = require)
+    if (is.null(con)) {
+        return(NULL)
+    }
+
+    has_object <- tryCatch(
+        nrow(DBI::dbGetQuery(con, glue::glue(
+            "SELECT 1 FROM information_schema.tables ",
+            "WHERE table_schema = '{schema}' AND table_name = '{file}' LIMIT 1"
+        ))) > 0,
+        error = function(e) FALSE
+    )
+    if (!has_object) {
+        return(say(glue::glue("Mirror does not contain {schema}.{file}")))
+    }
+
+    dplyr::tbl(con, I(glue::glue('"{schema}"."{file}"')))
+}
+
+# (internal) Return the cached read-only connection to the DuckDB mirror, or
+# NULL when the mirror is not enabled, not available, or stale. With
+# require=TRUE, failures abort with the reason instead.
+mirror_con <- function(cfg, require = FALSE) {
+    say <- function(msg) {
+        if (require) cli::cli_abort(msg)
+        NULL
+    }
+
     dk <- cfg$duckdb
     if (is.null(dk) || is.null(dk$path)) {
         return(say("DuckDB mirror is not configured (duckdb: path in config.yml)"))
@@ -316,28 +310,110 @@ mirror_tbl <- function(cfg, schema, file, require = FALSE) {
     }
 
     fresh <- tryCatch({
-        info <- DBI::dbGetQuery(con, "SELECT built_at FROM meta._mirror_info LIMIT 1")
+        # Newer mirror builds record build info in _extract.info; older
+        # ones used meta._mirror_info.
+        info <- tryCatch(
+            DBI::dbGetQuery(con, "SELECT max(built_at) AS built_at FROM _extract.info"),
+            error = function(e) {
+                DBI::dbGetQuery(con, "SELECT built_at FROM meta._mirror_info LIMIT 1")
+            }
+        )
         age_h <- as.numeric(difftime(Sys.time(), info$built_at[1], units = "hours"))
         max_age <- suppressWarnings(as.numeric(dk$mirror_max_age_hours))
         if (!is.finite(max_age)) max_age <- 36
         is.finite(age_h) && age_h <= max_age
     }, error = function(e) FALSE)
     if (!fresh) {
-        return(say("Mirror is stale (or missing meta._mirror_info)"))
+        return(say("Mirror is stale (or missing _extract.info / meta._mirror_info)"))
     }
 
-    has_object <- tryCatch(
-        nrow(DBI::dbGetQuery(con, glue::glue(
-            "SELECT 1 FROM information_schema.tables ",
-            "WHERE table_schema = '{schema}' AND table_name = '{file}' LIMIT 1"
-        ))) > 0,
-        error = function(e) FALSE
-    )
-    if (!has_object) {
-        return(say(glue::glue("Mirror does not contain {schema}.{file}")))
+    con
+}
+
+#' Translate a SQL Server (T-SQL) query to DuckDB SQL for the CCDW mirror.
+#'
+#' Uses the Python package sqlglot to transpile the query. Database (catalog)
+#' prefixes for databases combined into the mirror, such as
+#' `CCDW_HIST.history.PERSON`, are removed so the query runs against the
+#' mirror's single catalog. Brackets, `TOP`, `GETDATE()`, `ISNULL()` and
+#' similar T-SQL syntax are converted.
+#'
+#' Requires Python with sqlglot installed (`pip install sqlglot`). The Python
+#' executable is taken from `duckdb: python:` in the configuration file, or
+#' else the first `python`/`python3` on the PATH.
+#'
+#' @param sql The T-SQL query.
+#' @param catalogs Database names to strip from three-part table names.
+#'     Defaults to `duckdb: databases:` in the configuration file, or
+#'     `CCDW_HIST` and `CCDW`.
+#' @param read The sqlglot dialect of the input query. Default "tsql".
+#' @eval pkg_common_cfg_params()
+#'
+#' @return The translated query as a single string.
+#'
+#' @export
+#'
+translateSQL_DuckDB <- function(
+    sql,
+    catalogs = NA_character_,
+    read = "tsql",
+    cfg = NA_character_
+) {
+    if (all(is.na(cfg)) || is.null(cfg)) {
+        cfg <- getCfg()
     }
 
-    dplyr::tbl(con, I(glue::glue('"{schema}"."{file}"')))
+    if (all(is.na(catalogs))) {
+        catalogs <- purrr::pluck(
+            cfg, "duckdb", "databases",
+            .default = c("CCDW_HIST", "CCDW")
+        )
+    }
+
+    python <- purrr::pluck(cfg, "duckdb", "python", .default = NA_character_)
+    if (!has_value(python)) {
+        python <- Sys.which(c("python", "python3"))
+        python <- python[nzchar(python)][1]
+    }
+    if (!has_value(python)) {
+        cli::cli_abort(c(
+            "Python was not found, so the query cannot be translated to DuckDB.",
+            "i" = "Install Python with sqlglot, or set {.field duckdb: python:} in the configuration file."
+        ))
+    }
+
+    script <- system.file("python", "sql_to_duckdb.py", package = "ccdwr")
+    if (!nzchar(script)) {
+        cli::cli_abort("Translation script {.file sql_to_duckdb.py} is missing from the ccdwr package.")
+    }
+
+    sql_file <- tempfile(fileext = ".sql")
+    out_file <- tempfile(fileext = ".sql")
+    err_file <- tempfile(fileext = ".txt")
+    on.exit(unlink(c(sql_file, out_file, err_file)), add = TRUE)
+    writeLines(enc2utf8(paste(sql, collapse = "\n")), sql_file, useBytes = TRUE)
+
+    status <- suppressWarnings(system2(
+        python,
+        c(
+            shQuote(script),
+            shQuote(sql_file),
+            shQuote(out_file),
+            "--read", read,
+            "--drop-catalogs", shQuote(paste(catalogs, collapse = ","))
+        ),
+        stdout = err_file,
+        stderr = err_file
+    ))
+    if (status != 0 || !file.exists(out_file)) {
+        err <- readLines(err_file, warn = FALSE, encoding = "UTF-8")
+        cli::cli_abort(c(
+            "Could not translate the query to DuckDB SQL.",
+            "x" = paste(err, collapse = "\n")
+        ))
+    }
+
+    paste(readLines(out_file, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
 }
 
 #' Close the cached DuckDB mirror connection.
@@ -610,13 +686,18 @@ getColleagueData <- function(
 
 #' Return a data from data warehouse Colleague tables via a SQL query.
 #'
-#' @param sql The query to run.
+#' @param sql The query to run, written for SQL Server (T-SQL).
 #' @param db The database to use. Defaults to the database specified in the configuration file.
 #' @eval pkg_common_cfg_params()
 #' @eval pkg_common_cfgpath_params()
 #' @eval pkg_common_reload_params()
 #' @param sep The separator to use in the field names. Default is a '.' as in the original Colleague file.
-#' @param ext The extention to use for files.
+#' @param source Where to run the query: "auto" (the DuckDB mirror when it
+#'     is enabled and fresh, otherwise the server), "server", or "mirror"
+#'     (abort rather than fall back). Default "auto".
+#' @param translate When running on the mirror, translate the query from
+#'     T-SQL to DuckDB SQL first with [translateSQL_DuckDB()]. Set to FALSE
+#'     when `sql` is already written for DuckDB. Default TRUE.
 #'
 #' @importFrom stringr str_c
 #' @importFrom fs path
@@ -640,9 +721,11 @@ getColleagueData_SQL <- function(
     cfg_full_path = NA_character_,
     cfg_fn = NA_character_,
     cfg_path = NA_character_,
-    reload = FALSE
+    reload = FALSE,
+    source = "auto",
+    translate = TRUE
 ) {
-    CurrentFlag <- NULL
+    source <- match.arg(source, c("auto", "server", "mirror"))
 
     if (all(is.na(cfg)) || is.null(cfg)) {
         cfg <- rlang::env_get(pkg.env, "cfg", default = NA)
@@ -678,27 +761,54 @@ getColleagueData_SQL <- function(
         return(NULL)
     }
 
-    if (is.na(db)) {
-        db <- cfg$sql$db
+    df <- NULL
+
+    # The mirror combines the databases listed in duckdb: databases (default
+    # CCDW_HIST and CCDW), so a db= override must be one of those.
+    mirror_dbs <- toupper(c(
+        cfg$sql$db,
+        purrr::pluck(cfg, "duckdb", "databases", .default = c("CCDW_HIST", "CCDW"))
+    ))
+    mirror_eligible <- is.na(db) || toupper(db) %in% mirror_dbs
+    if (source %in% c("auto", "mirror")) {
+        if (mirror_eligible) {
+            con <- mirror_con(cfg, require = (source == "mirror"))
+            if (!is.null(con)) {
+                # Once the mirror is chosen, errors are reported rather than
+                # retried on the server, so the real problem is visible.
+                if (translate) {
+                    sql <- translateSQL_DuckDB(sql, cfg = cfg)
+                }
+                df <- DBI::dbGetQuery(con, sql)
+            }
+        } else if (source == "mirror") {
+            cli::cli_abort("The DuckDB mirror does not contain database {.val {db}}")
+        }
     }
-    conn_str <- stringr::str_c(
-        glue::glue(
-            "Driver={<<cfg$sql$driver>>}",
-            .open = "<<",
-            .close = ">>"
-        ),
-        glue::glue(
-            "Server={<<cfg$sql$server>>}",
-            .open = "<<",
-            .close = ">>"
-        ),
-        glue::glue("Database={<<db>>}", .open = "<<", .close = ">>"),
-        "Trusted_Connection=Yes",
-        "Description=Informer.r:getColleagueData_SQL()",
-        sep = ";"
-    )
-    ccdwconn <- odbc::dbConnect(odbc::odbc(), .connection_string = conn_str)
-    df <- DBI::dbGetQuery(ccdwconn, sql)
+
+    if (is.null(df)) {
+        if (is.na(db)) {
+            db <- cfg$sql$db
+        }
+        conn_str <- stringr::str_c(
+            glue::glue(
+                "Driver={<<cfg$sql$driver>>}",
+                .open = "<<",
+                .close = ">>"
+            ),
+            glue::glue(
+                "Server={<<cfg$sql$server>>}",
+                .open = "<<",
+                .close = ">>"
+            ),
+            glue::glue("Database={<<db>>}", .open = "<<", .close = ">>"),
+            "Trusted_Connection=Yes",
+            "Description=Informer.r:getColleagueData_SQL()",
+            sep = ";"
+        )
+        ccdwconn <- odbc::dbConnect(odbc::odbc(), .connection_string = conn_str)
+        df <- DBI::dbGetQuery(ccdwconn, sql)
+    }
 
     if (sep != '.') {
         names(df) <- gsub("\\.", sep, names(df))
